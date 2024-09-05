@@ -1,14 +1,25 @@
 # Use the official Python image from the Docker Hub
 FROM python:3.10-slim
 
-# Set the working directory in the container
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Set working directory
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy the requirements.txt file into the working directory
+COPY requirements.txt /app/
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Install the required Python packages
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
-# Run main.py when the container launches
+# Copy the rest of the application code into the working directory
+COPY . /app/
+
+# Expose the port the app runs on
+EXPOSE 80
+
+# Command to run the application
 CMD ["python", "main.py"]

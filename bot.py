@@ -1,179 +1,156 @@
 from pyrogram import Client, filters
 from pyrogram.types import Message
+import os
 from config import API_ID, API_HASH, BOT_TOKEN, OWNER_ID, BLACKLIST_FILE, ACTIVE_GROUPS_FILE
-import json
+from datetime import datetime, timedelta
 
-app = Client("AntiGcastBot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("antigcast_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Load blacklist and active groups from file
+# Load blacklist from file
 def load_blacklist():
     try:
         with open(BLACKLIST_FILE, 'r') as f:
-            return set(f.read().splitlines())
+            return set(line.strip() for line in f)
     except FileNotFoundError:
         return set()
 
-def save_blacklist(blacklist):
-    with open(BLACKLIST_FILE, 'w') as f:
-        f.write('\n'.join(blacklist))
+blacklist = load_blacklist()
+active_groups = {}
 
+# Load active groups from file
 def load_active_groups():
     try:
         with open(ACTIVE_GROUPS_FILE, 'r') as f:
-            return json.load(f)
+            for line in f:
+                group_id, expiry_date = line.strip().split(',')
+                active_groups[int(group_id)] = datetime.strptime(expiry_date, "%Y-%m-%d")
     except FileNotFoundError:
-        return {}
+        pass
 
-def save_active_groups(groups):
+load_active_groups()
+
+# Save active groups to file
+def save_active_groups():
     with open(ACTIVE_GROUPS_FILE, 'w') as f:
-        json.dump(groups, f)
+        for group_id, expiry_date in active_groups.items():
+            f.write(f"{group_id},{expiry_date.strftime('%Y-%m-%d')}\n")
 
-blacklist = load_blacklist()
-active_groups = load_active_groups()
-
-def is_owner(user_id):
-    return user_id == OWNER_ID
-
-def is_protected(chat_id):
-    return active_groups.get(str(chat_id), {}).get('protected', False)
-
+# 👮🏻‍♀️ PERINTAH ADMIN
 @app.on_message(filters.command("addbl") & filters.user(OWNER_ID))
-def add_to_blacklist(client, message: Message):
-    if message.reply_to_message:
-        text = message.reply_to_message.text
+async def add_to_blacklist(client, message: Message):
+    word = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else message.reply_to_message.text
+    if word:
+        with open(BLACKLIST_FILE, 'a') as f:
+            f.write(f"{word}\n")
+        blacklist.add(word)
+        await message.reply(f"'{word}' telah ditambahkan ke blacklist.")
     else:
-        text = " ".join(message.command[1:])
-    
-    if text:
-        blacklist.add(text)
-        save_blacklist(blacklist)
-        message.reply(f"Added to blacklist: {text}")
-    else:
-        message.reply("No text provided to blacklist.")
+        await message.reply("Gunakan perintah dengan reply atau tambahkan text!")
 
 @app.on_message(filters.command("deldbl") & filters.user(OWNER_ID))
-def remove_from_blacklist(client, message: Message):
-    if message.reply_to_message:
-        text = message.reply_to_message.text
+async def remove_from_blacklist(client, message: Message):
+    word = message.text.split(maxsplit=1)[1] if len(message.text.split()) > 1 else message.reply_to_message.text
+    if word in blacklist:
+        blacklist.remove(word)
+        with open(BLACKLIST_FILE, 'w') as f:
+            for item in blacklist:
+                f.write(f"{item}\n")
+        await message.reply(f"'{word}' telah dihapus dari blacklist.")
     else:
-        text = " ".join(message.command[1:])
-    
-    if text in blacklist:
-        blacklist.remove(text)
-        save_blacklist(blacklist)
-        message.reply(f"Removed from blacklist: {text}")
-    else:
-        message.reply("Text not found in blacklist.")
+        await message.reply("Kata tidak ditemukan dalam blacklist.")
+
+active = True
 
 @app.on_message(filters.command("protect") & filters.user(OWNER_ID))
-def toggle_protect(client, message: Message):
-    status = message.command[1].lower() if len(message.command) > 1 else None
-    chat_id = message.chat.id
-
-    if status not in ["on", "off"]:
-        message.reply("Usage: /protect [on|off]")
-        return
-
-    is_protected_status = status == "on"
-    active_groups[str(chat_id)] = {"protected": is_protected_status}
-    save_active_groups(active_groups)
-    
-    message.reply(f"Bot protection is now {'enabled' if is_protected_status else 'disabled'}.")
+async def toggle_protection(client, message: Message):
+    global active
+    command = message.text.split()[1] if len(message.text.split()) > 1 else ""
+    if command == "on":
+        active = True
+        await message.reply("Bot diaktifkan.")
+    elif command == "off":
+        active = False
+        await message.reply("Bot dinonaktifkan.")
+    else:
+        await message.reply("Gunakan perintah yang valid: /protect [on|off]")
 
 @app.on_message(filters.command("status") & filters.chat_type.groups)
-def status(client, message: Message):
-    chat_id = message.chat.id
-    protected_status = is_protected(chat_id)
-    message.reply(f"Bot protection status: {'Enabled' if protected_status else 'Disabled'}")
+async def status(client, message: Message):
+    if active:
+        await message.reply("Bot aktif.")
+    else:
+        await message.reply("Bot tidak aktif.")
 
+# 🧑🏻‍💻 PERINTAH OWNER
 @app.on_message(filters.command("add") & filters.user(OWNER_ID))
-def add_group(client, message: Message):
-    if len(message.command) != 3:
-        message.reply("Usage: /add [Group ID] [Duration (Days)]")
-        return
-    
-    group_id = message.command[1]
-    duration = int(message.command[2])
-    active_groups[group_id] = {"expires": duration}
-    save_active_groups(active_groups)
-    
-    message.reply(f"Group {group_id} has been activated for {duration} days.")
+async def add_group(client, message: Message):
+    try:
+        group_id, duration = map(int, message.text.split()[1:3])
+        expiry_date = datetime.now() + timedelta(days=duration)
+        active_groups[group_id] = expiry_date
+        save_active_groups()
+        await message.reply(f"Bot diaktifkan di grup {group_id} selama {duration} hari.")
+    except (ValueError, IndexError):
+        await message.reply("Penggunaan: /add [Group ID] [Durasi (Hari)]")
 
-@app.on_message(filters.command("addgc") & filters.chat_type.groups)
-def add_group_from_chat(client, message: Message):
-    if len(message.command) != 2:
-        message.reply("Usage: /addgc [Duration (Days)]")
-        return
-    
-    duration = int(message.command[1])
-    group_id = str(message.chat.id)
-    active_groups[group_id] = {"expires": duration}
-    save_active_groups(active_groups)
-    
-    message.reply(f"Group {group_id} has been activated for {duration} days.")
+@app.on_message(filters.command("addgc") & filters.user(OWNER_ID) & filters.chat_type.groups)
+async def add_current_group(client, message: Message):
+    try:
+        duration = int(message.text.split()[1])
+        group_id = message.chat.id
+        expiry_date = datetime.now() + timedelta(days=duration)
+        active_groups[group_id] = expiry_date
+        save_active_groups()
+        await message.reply(f"Bot diaktifkan di grup ini selama {duration} hari.")
+    except (ValueError, IndexError):
+        await message.reply("Penggunaan: /addgc [Durasi (Hari)]")
 
 @app.on_message(filters.command("rmgc") & filters.user(OWNER_ID))
-def remove_group(client, message: Message):
-    if len(message.command) != 2:
-        message.reply("Usage: /rmgc [Group ID]")
-        return
-    
-    group_id = message.command[1]
-    if group_id in active_groups:
-        del active_groups[group_id]
-        save_active_groups(active_groups)
-        message.reply(f"Group {group_id} has been removed from active groups.")
-    else:
-        message.reply("Group ID not found.")
+async def remove_group(client, message: Message):
+    try:
+        group_id = int(message.text.split()[1])
+        if group_id in active_groups:
+            del active_groups[group_id]
+            save_active_groups()
+            await message.reply(f"Grup {group_id} telah dihapus dari daftar grup aktif.")
+        else:
+            await message.reply(f"Grup {group_id} tidak ditemukan dalam daftar grup aktif.")
+    except (ValueError, IndexError):
+        await message.reply("Penggunaan: /rmgc [Group ID]")
 
 @app.on_message(filters.command("groups") & filters.user(OWNER_ID))
-def list_active_groups(client, message: Message):
-    if not active_groups:
-        message.reply("No active groups.")
-        return
-    
-    response = "Active Groups:\n"
-    for group_id, info in active_groups.items():
-        response += f"Group ID: {group_id}, Duration: {info['expires']} days\n"
-    
-    message.reply(response)
+async def list_active_groups(client, message: Message):
+    if active_groups:
+        groups_list = "\n".join([f"{group_id} - Aktif hingga {expiry_date.strftime('%Y-%m-%d')}" for group_id, expiry_date in active_groups.items()])
+        await message.reply(f"Daftar grup aktif:\n{groups_list}")
+    else:
+        await message.reply("Tidak ada grup aktif.")
+
+global_blacklist = set()
 
 @app.on_message(filters.command("bl") & filters.user(OWNER_ID))
-def blacklist_user(client, message: Message):
-    if message.reply_to_message:
-        user_id = message.reply_to_message.from_user.id
-    else:
-        user_id = message.command[1] if len(message.command) > 1 else None
-    
-    if user_id:
-        # You need to implement how to globally blacklist users
-        message.reply(f"User {user_id} has been added to the global blacklist.")
-    else:
-        message.reply("No user ID provided.")
+async def global_blacklist_user(client, message: Message):
+    user_id = message.reply_to_message.from_user.id if message.reply_to_message else int(message.text.split()[1])
+    global_blacklist.add(user_id)
+    await message.reply(f"User {user_id} telah di-blacklist secara global.")
 
 @app.on_message(filters.command("unbl") & filters.user(OWNER_ID))
-def unblacklist_user(client, message: Message):
-    if message.reply_to_message:
-        user_id = message.reply_to_message.from_user.id
+async def global_unblacklist_user(client, message: Message):
+    user_id = message.reply_to_message.from_user.id if message.reply_to_message else int(message.text.split()[1])
+    if user_id in global_blacklist:
+        global_blacklist.remove(user_id)
+        await message.reply(f"User {user_id} telah dihapus dari global blacklist.")
     else:
-        user_id = message.command[1] if len(message.command) > 1 else None
-    
-    if user_id:
-        # You need to implement how to globally unblacklist users
-        message.reply(f"User {user_id} has been removed from the global blacklist.")
-    else:
-        message.reply("No user ID provided.")
+        await message.reply(f"User {user_id} tidak ditemukan dalam global blacklist.")
 
 @app.on_message(filters.command("blist") & filters.user(OWNER_ID))
-def list_blacklist(client, message: Message):
-    if not blacklist:
-        message.reply("Blacklist is empty.")
-        return
-    
-    response = "Global Blacklist:\n"
-    response += "\n".join(blacklist)
-    
-    message.reply(response)
+async def show_global_blacklist(client, message: Message):
+    if global_blacklist:
+        bl_list = "\n".join([str(user_id) for user_id in global_blacklist])
+        await message.reply(f"Daftar global blacklist:\n{bl_list}")
+    else:
+        await message.reply("Global blacklist kosong.")
 
+# Jalankan bot
 if __name__ == "__main__":
     app.run()

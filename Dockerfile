@@ -1,25 +1,18 @@
-# Use the official Python image from the Docker Hub
+# Gunakan Python image resmi versi 3.10
 FROM python:3.10-slim
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
 
 # Set working directory
 WORKDIR /app
 
-# Copy the requirements.txt file into the working directory
-COPY requirements.txt /app/
+# Salin file requirements.txt dan install dependencies
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install the required Python packages
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+# Salin seluruh file aplikasi ke container
+COPY . .
 
-# Copy the rest of the application code into the working directory
-COPY . /app/
+# Expose port (opsional jika ada UI atau akses via HTTP, misalnya)
+# EXPOSE 8080
 
-# Expose the port the app runs on
-EXPOSE 80
-
-# Command to run the application
+# Jalankan bot menggunakan perintah ini
 CMD ["python", "main.py"]

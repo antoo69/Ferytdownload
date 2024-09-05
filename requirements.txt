@@ -1,3 +1,10 @@
-pyrogram
-tgcrypto
-python-dotenv
+# Telegram API library
+pyrogram==2.0.80
+
+# Encryption library
+tgcrypto==1.2.1
+
+# Dotenv for environment variable management
+python-dotenv==1.0.0
+
+# Additional dependencies (if any)

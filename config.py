@@ -1,3 +1,10 @@
-BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
-API_ID = 'YOUR_TELEGRAM_API_ID'
-API_HASH = 'YOUR_TELEGRAM_API_HASH'
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from a .env file
+load_dotenv()
+
+# Telegram Bot API credentials
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")

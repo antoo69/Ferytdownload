@@ -17,15 +17,12 @@ app = Client("bot_maker", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # To store running processes (up to 3 repositories)
 running_bots = []
-
 MAX_BOTS = 3
-
 
 @app.on_message(filters.command("start"))
 async def start(client: Client, message: Message):
     """Start command to welcome the user."""
     await message.reply("Welcome to the Bot Maker! Send me a GitHub repo link to deploy a Telegram bot.")
-
 
 @app.on_message(filters.text & ~filters.edited)
 async def deploy_bot(client: Client, message: Message):
@@ -81,7 +78,6 @@ async def stop_bot(client: Client, message: Message):
 
     await message.reply(f"No running bot found with name {bot_name}.")
 
-
 @app.on_message(filters.command("list"))
 async def list_bots(client: Client, message: Message):
     """List all running bots."""
@@ -90,7 +86,6 @@ async def list_bots(client: Client, message: Message):
     else:
         running_bot_names = [name for name, _ in running_bots]
         await message.reply(f"Running bots: {', '.join(running_bot_names)}")
-
 
 if __name__ == "__main__":
     app.run()

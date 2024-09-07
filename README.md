@@ -24,5 +24,5 @@ Bot anti-gcast untuk Telegram dengan Pyrogram dan MongoDB.
 2. Clone repository `git clone https://github.com/antoo69/builder`
 3. Install dependencies: `pip install -r requirements.txt`
 4. Atur environment variables di .env.
-5. `cp nano .env config.env`
+5. `cp .env config.env`
 6. Jalankan bot: `python3 bot.py`

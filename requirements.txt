@@ -1,4 +1,2 @@
-pyrogram==2.0.66
-GitPython==3.1.30
-python-dotenv==1.0.0
-
+pyrogram==2.1.5
+pymongo[srv]

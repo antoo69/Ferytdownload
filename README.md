@@ -18,3 +18,11 @@ Bot anti-gcast untuk Telegram dengan Pyrogram dan MongoDB.
 4. Jalankan bot: `python3 bot.py`
 
 ## Created by @fsyrl
+
+## Deployment di VPS:
+1. Install Python dan MongoDB di VPS.
+2. Clone repository `git clone https://github.com/antoo69/builder`
+3. Install dependencies: `pip install -r requirements.txt`
+4. Atur environment variables di .env.
+5. `cp nano .env config.env`
+6. Jalankan bot: `python3 bot.py`

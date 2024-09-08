@@ -3,7 +3,7 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 import yt_dlp
-from config import TOKEN, ADMIN_ID, LOGO_PATH
+from config import BOT_TOKEN, ADMIN_ID, LOGO_PATH
 
 # Konfigurasi logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -126,7 +126,7 @@ async def broadcast(update: Update, context):
 
 # Fungsi utama
 def main():
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('user', user_count))

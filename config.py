@@ -1,7 +1,10 @@
-import os
+# config.py
 
-# Variabel konfigurasi
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', 'your-telegram-bot-token')
+# Token bot Telegram Anda
+BOT_TOKEN = 'YOUR_BOT_TOKEN'
 
-# URL media dari Telegraph
-TELEGRAPH_MEDIA_URL = 'https://telegra.ph/file/your-media-file.jpg'  # Ganti dengan URL Telegraph yang sesuai (JPG, PNG, GIF, MP4)
+# Daftar ID admin (gantikan dengan ID yang valid)
+ADMIN_IDS = [123456789, 987654321]  # Contoh ID admin
+
+# Logo bot (URL atau path file logo)
+LOGO_PATH = 'path_to_logo_file.png'  # Ganti dengan path file logo Anda

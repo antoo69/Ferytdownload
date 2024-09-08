@@ -1,2 +1,2 @@
-pyrogram==2.1.5
-pymongo[srv]
+python-telegram-bot==20.0a1
+yt-dlp==2024.09.07

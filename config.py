@@ -1,12 +1,7 @@
 import os
 
-class Config:
-    API_ID = os.getenv("API_ID")
-    API_HASH = os.getenv("API_HASH")
-    BOT_TOKEN = os.getenv("BOT_TOKEN")
-    MONGO_URI = os.getenv("MONGO_URI")
-    OWNER_ID = int(os.getenv("OWNER_ID"))  # ID Telegram Owner
-    LOGO_URL = os.getenv("LOGO_URL")  # URL untuk gambar logo
-    SUPPORT_CHANNEL = os.getenv("SUPPORT_CHANNEL")  # URL support channel
-    SUPPORT_GROUP = os.getenv("SUPPORT_GROUP")  # URL support group
-    OWNER_USERNAME = os.getenv("OWNER_USERNAME")  # Username Telegram owner
+# Variabel konfigurasi
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', 'your-telegram-bot-token')
+
+# URL media dari Telegraph
+TELEGRAPH_MEDIA_URL = 'https://telegra.ph/file/your-media-file.jpg'  # Ganti dengan URL Telegraph yang sesuai (JPG, PNG, GIF, MP4)
